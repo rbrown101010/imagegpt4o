@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Generator App</title>
+    <title>AI Image Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,22 +38,65 @@
             max-width: 100%;
             border: 1px solid #ddd;
         }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .api-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #FF69B4;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .prompt-text {
+            font-style: italic;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>Image Generator</h1>
+    <div class="api-badge">OpenAI API</div>
+    <h1>AI Image Generator</h1>
     
     <div class="form-container">
         <form method="post">
-            <input type="text" name="prompt" placeholder="Enter your image description here" required>
+            <input type="text" name="prompt" placeholder="Describe the image you want to generate..." value="{{ prompt }}" required>
             <button type="submit">Generate</button>
         </form>
     </div>
     
+    <div class="loading" id="loading">
+        <p>Generating your image with AI...</p>
+    </div>
+    
+    {% if error_message %}
+    <div class="error">
+        <p>{{ error_message }}</p>
+    </div>
+    {% endif %}
+    
     {% if image_data %}
     <div class="image-container">
         <img src="data:image/png;base64,{{ image_data }}" alt="Generated image">
+        {% if prompt %}
+        <p class="prompt-text">Generated from: "{{ prompt }}"</p>
+        {% endif %}
     </div>
     {% endif %}
+    
+    <script>
+        document.querySelector('form').addEventListener('submit', function() {
+            document.getElementById('loading').style.display = 'block';
+        });
+    </script>
 </body>
 </html> 
