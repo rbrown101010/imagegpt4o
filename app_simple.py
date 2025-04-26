@@ -6,11 +6,45 @@ import random
 import base64
 import io
 from PIL import Image, ImageDraw
+import openai
+from openai import OpenAI
+from openai_config import OPENAI_API_KEY
 
-PORT = 8080
+PORT = 8090  # Changed to avoid conflict with running server
 
-def generate_image(prompt):
-    """Generate a simple image based on the prompt."""
+# Initialize OpenAI client if API key is available
+client = None
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+def generate_image_with_openai(prompt):
+    """Generate an image using OpenAI's gpt-image-1 model API"""
+    # If no API key or client is available, use fallback
+    if not client or not OPENAI_API_KEY:
+        print("No OpenAI API key available. Using fallback image generation.")
+        return generate_fallback_image(prompt)
+        
+    try:
+        # Call OpenAI API
+        response = client.images.generate(
+            model="gpt-image-1",
+            prompt=prompt,
+            size="512x512",  # Lower resolution for faster response
+            quality="medium",  # Medium quality for balance
+            response_format="b64_json"
+        )
+        
+        # Get base64 encoded image
+        img_b64 = response.data[0].b64_json
+        return img_b64
+        
+    except Exception as e:
+        print(f"Error calling OpenAI API: {e}")
+        # Fallback to the local image generation if API call fails
+        return generate_fallback_image(prompt)
+
+def generate_fallback_image(prompt):
+    """Fallback to generate a simple image based on the prompt."""
     # Create a blank white image
     width, height = 400, 400
     image = Image.new('RGB', (width, height), color='white')
@@ -62,7 +96,7 @@ class ImageGeneratorHandler(http.server.SimpleHTTPRequestHandler):
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Image Generator App</title>
+                <title>AI Image Generator</title>
                 <style>
                     body {{
                         font-family: Arial, sans-serif;
@@ -97,16 +131,36 @@ class ImageGeneratorHandler(http.server.SimpleHTTPRequestHandler):
                         max-width: 100%;
                         border: 1px solid #ddd;
                     }}
+                    .loading {{
+                        display: none;
+                        text-align: center;
+                        margin-top: 20px;
+                    }}
+                    .api-badge {{
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        background-color: #FF69B4;
+                        color: white;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        font-size: 12px;
+                    }}
                 </style>
             </head>
             <body>
-                <h1>Image Generator</h1>
+                <div class="api-badge">OpenAI API</div>
+                <h1>AI Image Generator</h1>
                 
                 <div class="form-container">
                     <form id="generate-form">
-                        <input type="text" id="prompt" name="prompt" placeholder="Enter your image description here" required>
+                        <input type="text" id="prompt" name="prompt" placeholder="Describe the image you want to generate..." required>
                         <button type="submit">Generate</button>
                     </form>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <p>Generating your image with AI...</p>
                 </div>
                 
                 <div class="image-container" id="image-display">
@@ -117,13 +171,20 @@ class ImageGeneratorHandler(http.server.SimpleHTTPRequestHandler):
                         e.preventDefault();
                         const prompt = document.getElementById('prompt').value;
                         
+                        // Show loading indicator
+                        document.getElementById('loading').style.display = 'block';
+                        
                         // Send request to generate image
                         const response = await fetch('/generate?prompt=' + encodeURIComponent(prompt));
                         const data = await response.json();
                         
+                        // Hide loading indicator
+                        document.getElementById('loading').style.display = 'none';
+                        
                         // Display the image
                         const imageContainer = document.getElementById('image-display');
-                        imageContainer.innerHTML = `<img src="data:image/png;base64,${{data.image}}" alt="Generated image">`;
+                        imageContainer.innerHTML = `<img src="data:image/png;base64,${{data.image}}" alt="Generated image">
+                                                   <p><em>Generated from: "${{prompt}}"</em></p>`;
                     }});
                 </script>
             </body>
@@ -136,7 +197,11 @@ class ImageGeneratorHandler(http.server.SimpleHTTPRequestHandler):
             prompt = query_components.get('prompt', [''])[0]
             
             # Generate the image
-            img_base64 = generate_image(prompt)
+            try:
+                img_base64 = generate_image_with_openai(prompt)
+            except Exception as e:
+                print(f"Error generating image: {e}")
+                img_base64 = generate_fallback_image(prompt)
             
             # Send response
             self.send_response(200)
@@ -156,4 +221,6 @@ def run_server():
         httpd.serve_forever()
 
 if __name__ == "__main__":
+    print(f"Starting AI Image Generator server on port {PORT}...")
+    print("Using OpenAI gpt-image-1 model for image generation")
     run_server() 
