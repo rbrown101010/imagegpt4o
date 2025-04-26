@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Generator App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .form-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .image-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+        img {
+            max-width: 100%;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Generator</h1>
+    
+    <div class="form-container">
+        <form method="post">
+            <input type="text" name="prompt" placeholder="Enter your image description here" required>
+            <button type="submit">Generate</button>
+        </form>
+    </div>
+    
+    {% if image_data %}
+    <div class="image-container">
+        <img src="data:image/png;base64,{{ image_data }}" alt="Generated image">
+    </div>
+    {% endif %}
+</body>
+</html> 
