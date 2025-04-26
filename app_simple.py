@@ -84,7 +84,7 @@ class ImageGeneratorHandler(http.server.SimpleHTTPRequestHandler):
                     }}
                     button {{
                         padding: 10px 15px;
-                        background-color: #4CAF50;
+                        background-color: #FF69B4;
                         color: white;
                         border: none;
                         cursor: pointer;
